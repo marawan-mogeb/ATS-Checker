@@ -62,6 +62,7 @@ An intelligent web application that analyzes your resume against job description
 
 ### 1. Clone or Download Project
 ```bash
+git clone https://github.com/marawan-mogeb/ATS-Checker.git
 cd .\ATS
 ```
 
