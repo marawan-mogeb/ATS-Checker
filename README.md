@@ -76,12 +76,7 @@ venv\Scripts\activate
 pip install -r requirements.txt
 ```
 
-### 4. Download spaCy Model
-```bash
-python -m spacy download en_core_web_sm
-```
-
-### 5. Run the Application
+### 4. Run the Application
 ```bash
 python app.py
 ```
