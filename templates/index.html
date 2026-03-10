@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ATS Resume Analyzer with ML</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1><i class="fas fa-robot"></i> ATS Resume Analyzer</h1>
+            <p class="subtitle">ML-powered resume optimization for Applicant Tracking Systems</p>
+        </header>
+
+        <div class="main-content">
+            <div class="upload-section">
+                <div class="card">
+                    <h2><i class="fas fa-upload"></i> Upload Your Resume & Job Description</h2>
+                    
+                    <div class="form-group">
+                        <label for="jobDescription"><i class="fas fa-file-alt"></i> Job Description</label>
+                        <textarea id="jobDescription" placeholder="Paste the job description here... (Required)" rows="8"></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="resumeUpload"><i class="fas fa-file-pdf"></i> Resume (PDF only)</label>
+                        <div class="upload-area" id="uploadArea">
+                            <i class="fas fa-cloud-upload-alt"></i>
+                            <p>Drag & drop your resume PDF here</p>
+                            <p>or</p>
+                            <button class="btn-secondary" onclick="document.getElementById('resumeFile').click()">
+                                Browse Files
+                            </button>
+                            <input type="file" id="resumeFile" accept=".pdf" hidden>
+                            <p class="file-info" id="fileInfo">No file selected</p>
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label><i class="fas fa-keyboard"></i> Alternative: Paste Resume Text (if PDF upload has issues)</label>
+                        <textarea id="resumeText" placeholder="Paste your resume text here if PDF upload isn't working properly..." rows="8"></textarea>
+                        <p style="font-size: 12px; color: #666; margin-top: 5px;">
+                            <i class="fas fa-info-circle"></i> Use this if the PDF upload only extracts partial text
+                        </p>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Select Industry (for keyword suggestions):</label>
+                        <select id="industrySelect" class="industry-select">
+                            <option value="software">Software & IT</option>
+                            <option value="data_science">Data Science & Analytics</option>
+                            <option value="marketing">Marketing & Sales</option>
+                            <option value="finance">Finance & Accounting</option>
+                            <option value="general">General</option>
+                        </select>
+                    </div>
+
+                    <button class="btn-primary" onclick="analyzeResume()" id="analyzeBtn">
+                        <i class="fas fa-chart-line"></i> Analyze Resume
+                    </button>
+                    
+                    <div class="loading" id="loading" style="display: none;">
+                        <div class="spinner"></div>
+                        <p>Analyzing your resume with ML algorithms...</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="results-section" id="resultsSection" style="display: none;">
+                <div class="card">
+                    <h2><i class="fas fa-chart-bar"></i> Analysis Results</h2>
+                    
+                    <div class="score-display">
+                        <div class="score-circle">
+                            <svg width="120" height="120">
+                                <circle cx="60" cy="60" r="54" fill="none" stroke="#e6e6e6" stroke-width="12"></circle>
+                                <circle id="scoreCircle" cx="60" cy="60" r="54" fill="none" stroke="#4CAF50" stroke-width="12" 
+                                        stroke-dasharray="339.292" stroke-dashoffset="339.292" transform="rotate(-90 60 60)"></circle>
+                            </svg>
+                            <div class="score-text">
+                                <span id="overallScore">0</span>
+                                <small>Overall Score</small>
+                            </div>
+                        </div>
+                        
+                        <div class="score-details">
+                            <div class="score-item">
+                                <span class="score-label">ATS Compatibility</span>
+                                <span class="score-value" id="atsScore">0%</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-label">ML Recommendation</span>
+                                <span class="score-value" id="mlScore">0%</span>
+                            </div>
+                            <div class="score-item">
+                                <span class="score-label">Keyword Coverage</span>
+                                <span class="score-value" id="keywordCoverage">0%</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tabs">
+                        <button class="tab-btn active" onclick="openTab('keywords')">Keywords</button>
+                        <button class="tab-btn" onclick="openTab('suggestions')">Suggestions</button>
+                        <button class="tab-btn" onclick="openTab('compliance')">Compliance</button>
+                        <button class="tab-btn" onclick="openTab('enhance')">Enhance Resume</button>
+                    </div>
+
+                    <div class="tab-content active" id="keywordsTab">
+                        <h3><i class="fas fa-key"></i> Keyword Analysis</h3>
+                        <div class="keyword-section">
+                            <div class="keyword-box success">
+                                <h4>Matched Keywords</h4>
+                                <div id="matchedKeywords" class="keyword-list"></div>
+                            </div>
+                            <div class="keyword-box warning">
+                                <h4>Missing Keywords</h4>
+                                <div id="missingKeywords" class="keyword-list"></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="suggestionsTab">
+                        <h3><i class="fas fa-lightbulb"></i> ML-Powered Suggestions</h3>
+                        <div id="mlSuggestions" class="suggestions-list"></div>
+                        
+                        <h4>Resume Strengths</h4>
+                        <div id="strengthsList" class="strengths-list"></div>
+                        
+                        <h4>Areas for Improvement</h4>
+                        <div id="weaknessesList" class="weaknesses-list"></div>
+                    </div>
+
+                    <div class="tab-content" id="complianceTab">
+                        <h3><i class="fas fa-check-circle"></i> ATS Compliance Check</h3>
+                        <div id="complianceIssues" class="compliance-list"></div>
+                        
+                        <div class="tips-box">
+                            <h4><i class="fas fa-tips"></i> ATS Best Practices</h4>
+                            <ul id="atsTips"></ul>
+                        </div>
+                    </div>
+
+                    <div class="tab-content" id="enhanceTab">
+                        <h3><i class="fas fa-magic"></i> Resume Enhancement</h3>
+                        <p>Get an AI-enhanced version of your resume with improved keywords and structure.</p>
+                        <button class="btn-secondary" onclick="enhanceResume()" id="enhanceBtn">
+                            <i class="fas fa-wand-magic-sparkles"></i> Generate Enhanced Resume
+                        </button>
+                        <div class="enhanced-resume" id="enhancedResume"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Powered by Machine Learning & NLP | ATS Resume Analyzer v1.0</p>
+            <p class="disclaimer">Note: This tool provides suggestions. Always review and customize your resume.</p>
+        </footer>
+    </div>
+
+    <script src="{{ url_for('static', filename='js/script.js') }}"></script>
+</body>
+</html>
